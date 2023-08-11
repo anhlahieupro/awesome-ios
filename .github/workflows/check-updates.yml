@@ -1,0 +1,33 @@
+name: Check Updates
+
+on:
+  schedule:
+    - cron: "59 * * * *"
+
+jobs:
+  check_updates:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Current Time
+      run: |
+        echo "Current time: $(date +"%Y-%m-%d %H:%M:%S")"
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Check Updates
+      run: |
+        git remote add upstream https://github.com/vsouza/awesome-ios
+        git fetch upstream
+        
+        UPDATES=$(git log --pretty=oneline master..upstream/master)
+
+        if [ -n "$UPDATES" ]; then
+          echo "Forked repository has updates!"
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"https://github.com/vsouza/awesome-ios"}' ${{ secrets.WEBHOOK_URL }}
+        else
+          echo "No updates detected in the forked repository."
+        fi
+      env:
+        WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
